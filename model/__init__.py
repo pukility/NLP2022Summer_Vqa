@@ -1,0 +1,1 @@
+from .model_mindspore import vqa_model
