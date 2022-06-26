@@ -1,6 +1,5 @@
 import os
 import json
-import gensim
 import pickle
 import numpy as np
 from tqdm import tqdm
@@ -8,8 +7,7 @@ from itertools import chain
 from os import path as osp
 
 from .vqaevaluate import VQAEval
-from torch import int32, float32
-from mindspore.mindrecord import FileWriter
+
 
 splits = ['train', "val", 'test']
 
@@ -21,14 +19,14 @@ class Tokenizer:
 
     def __init__(self, cfg):
         que_path = cfg["que_path"]
-        ans_path = cfg["ans_path"]
         img_path = cfg["img_path"]
         glove_path = cfg["glove_path"]
-        embed_size = cfg["embd_size"] # = 300
+        embd_path = cfg["embd_path"]
+        embed_size = cfg["embedding"]["embed_size"]
 
         self.__que_path = que_path
-        self.__ans_path = ans_path
         self.__img_path = img_path
+        self.__embd_path = embd_path
         self.__glove_dim = embed_size
         self.__glove_path = os.path.join(glove_path, 'glove.6B.' + str(self.__glove_dim) + 'd.txt')
         self.__glove_file = open(self.__glove_path, "r")
@@ -42,7 +40,6 @@ class Tokenizer:
         self.__img_feat = {}
 
         self.__word2idx = {}
-        self.__ans2idx = {}
         self.__weight_np = {}
 
     def parse(self):
@@ -52,6 +49,9 @@ class Tokenizer:
         print("=======================Start parse glove=======================")
         self.__parse_glove()
 
+
+        self.__ans_eval = VQAEval(n=8)
+        self.__ans_eval.run()
         for split in splits:
             print("=======================Start parse {}=======================".format(split))
             #从原始文本中加载数据
@@ -62,8 +62,8 @@ class Tokenizer:
             #生成对应的glove矩阵
             self.__gen_weight_np(split)
         
-        if weight_np is not None:
-            np.savetxt(os.path.join(data_home, 'weight.txt'), weight_np)
+        if self.__weight_np is not None:
+            np.savetxt(os.path.join(self.__embd_path, 'weight.txt'), self.__weight_np)
 
     def __parse_glove(self):
         f_lines = self.__glove_file.readlines()
@@ -95,31 +95,9 @@ class Tokenizer:
         """
         加载答案数据，保存为{ans: que_str}的形式
         """
-        path = osp.join(self.__ans_path, split+".json")
-        ans_file = json.load(open(path, "r"))
 
-        if split =="train":
-            ans_vocab = {}
-            for a in ans_file["annotations"]:
-                ans = a["multiple_choice_answer"]
-                id = a["question_id"]
-                if ans not in ans_vocab.keys():
-                    ans_vocab[ans] = [id]
-                else:
-                    ans_vocab[ans].append(id)
-            ans_vocab = set(chain(ans_vocab.keys()))
-            ans_to_idx = {word: i + 1 for i, word in enumerate(ans_vocab)}
-            ans_to_idx['<unk>'] = 0
-            self.__ans2idx = ans_to_idx
-        
-        ans_token = {}
-        for a in ans_file["annotations"]:
-            ans = a["multiple_choice_answer"]
-            qid = a["question_id"]
-            ans_idx = self.__ans2idx.get(ans, 0)
-            ans_token[qid] = ans_idx
+        ans_token = self.__ans_eval.get_acc(split)
         self.__ans_token[split] = ans_token
-
 
     def __parse_que_and_ans(self, split):
         """

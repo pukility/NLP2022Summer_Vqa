@@ -1,11 +1,19 @@
 cfg = {}
 
-cfg["embedding"] = {}
+# in ./utils/tokenizer.py
+cfg["que_path"] = "./data/vqa/questions"
+cfg["img_path"] = "./data/vqa/image_features.pkl"
+cfg["glove_path"] = "./data/vqa/glove.6B"
+cfg["embd_path"] = "./data/vqa/preprocess"
+cfg["max_len"] = 14
 
-cfg["embedding"]["vocab_size"] = {}
-cfg["embedding"]["vocab_size"]["train"] = 9447
-cfg["embedding"]["vocab_size"]["val"] = 6835
-cfg["embedding"]["vocab_size"]["tests"] = 6818
+# in ./model/question_embedding
+cfg["embedding"] = {}
+cfg["embedding"]["vocab_size"] = 9447
+#cfg["embedding"]["vocab_size"]["train"] = 9447
+#cfg["embedding"]["vocab_size"]["val"] = 6835
+#cfg["embedding"]["vocab_size"]["tests"] = 6818
+cfg["embedding"]["embed_size"] = 300
 
 cfg["w1"] = {}
 cfg["w1"]["input_dim"] = 512 + 2048

@@ -1,1 +1,1 @@
-from tokenizer import convert_to_mindrecord
+from tokenizer import Tokenizer

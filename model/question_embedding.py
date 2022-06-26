@@ -17,7 +17,7 @@ class embedding(nn.Cell):
         self._vocab_size = cfg["embedding"]["vocab_size"]
         self._embed_size = cfg["embedding"]["embed_size"]
 
-        self._embdpath = osp.join(cfg["preprocess_path"], "weight.txt")
+        self._embdpath = osp.join(cfg["embd_path"], "weight.txt")
         self._embedding_table = np.loadtxt(self._embdpath).astype(np.float32)
         self.embedding = nn.Embedding(self._vocab_size, self._embed_size, self._embedding_table)
 

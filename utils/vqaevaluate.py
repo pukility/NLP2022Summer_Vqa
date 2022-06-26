@@ -1,7 +1,7 @@
 import numpy as np
 import json
 class VQAEval:
-    def __init__(self, n = 8, file_name = 'train.json'):
+    def __init__(self, n = 8):
         self.n = n
         self.contractions = {"aint": "ain't", "arent": "aren't", "cant": "can't", "couldve": "could've", "couldnt": "couldn't", \
                             "couldn'tve": "couldn't've", "couldnt've": "couldn't've", "didnt": "didn't", "doesnt": "doesn't", "dont": "don't", "hadnt": "hadn't", \
@@ -38,17 +38,19 @@ class VQAEval:
             'nine' : 9
         }
         self.articles = {'a', 'an', 'the'}
-        self.answer = json.load(open('./annotations/' + file_name, 'r', encoding='utf-8'))
+        self.answer = {'train' : json.load(open('./annotations/train.json', 'r', encoding='utf-8')), 
+                       'test' : json.load(open('./annotations/test.json', 'r', encoding='utf-8')), 
+                       'val' : json.load(open('./annotations/val.json', 'r', encoding='utf-8'))}
         self.wordset = []
         self.freq = {}
-        self.acc = {}
+        self.acc = {'train' : {}, 'test' : {}, 'val' : {}}
 
 
     def get_word_set(self):
         """
         根据json当中的multiple_choice_answer字段得到字典
         """
-        for ans in self.answer['annotations']:
+        for ans in self.answer['train']['annotations']:
             self.wordset.append(self.contractions.get(ans['multiple_choice_answer'], ans['multiple_choice_answer']))
         self.wordset = set(self.wordset)
 
@@ -58,7 +60,7 @@ class VQAEval:
         对于freq小于n的answer，采取删除的措施
         此函数运行结束之后self.freq中保存了满足条件的answer，key为answer，value为answer的index
         """
-        for answers in self.answer['annotations']:
+        for answers in self.answer['train']['annotations']:
             self.freq[answers['multiple_choice_answer']] = self.freq.get(answers['multiple_choice_answer'], 0) + 1
         tmp = []
         for key, val in self.freq.items():
@@ -72,33 +74,33 @@ class VQAEval:
             idx += 1
 
 
-    def get_vec(self):
+    def get_vec(self, split = 'train'):
         """
         根据公式计算出最终的Acc值
         """
-        for i in range(len(self.answer['annotations'])):
-            self.acc[self.answer['annotations'][i]['question_id']] = np.zeros(len(self.wordset))
-            answers = self.answer['annotations'][i]
+        for i in range(len(self.answer[split]['annotations'])):
+            self.acc[split][self.answer[split]['annotations'][i]['question_id']] = np.zeros(len(self.wordset))
+            answers = self.answer[split]['annotations'][i]
             for ans in answers['answers']:
                 if ans['answer'] not in self.freq.keys():
                     continue
                 else:
-                    self.acc[self.answer['annotations'][i]['question_id']][self.freq[ans['answer']]] += 1
-        for key, val in self.acc.items():
-            self.acc[key] = self.acc[key] / (np.ones_like(self.acc[key]) * 3)
-            self.acc[key][self.acc[key] < 1] = 1
+                    self.acc[split][self.answer[split]['annotations'][i]['question_id']][self.freq[ans['answer']]] += 1
+        for key, val in self.acc[split].items():
+            self.acc[split][key] = self.acc[split][key] / (np.ones_like(self.acc[split][key]) * 3)
+            self.acc[split][key][self.acc[split][key] < 1] = 1
 
 
-    def process_digit(self):
+    def process_digit(self, split = 'train'):
         """
         对数据进行预处理，包括规范化，统一大小写，去掉和更改部分单词等
         """
-        for idx, answers in enumerate(self.answer['annotations']):
-            self.answer['annotations'][idx]['multiple_choice_answer'] = str(self.answer['annotations'][idx]['multiple_choice_answer']).lower()
-            self.answer['annotations'][idx]['multiple_choice_answer'] = self.process_single_sentence(self.answer['annotations'][idx]['multiple_choice_answer'])
+        for idx, answers in enumerate(self.answer[split]['annotations']):
+            self.answer[split]['annotations'][idx]['multiple_choice_answer'] = str(self.answer[split]['annotations'][idx]['multiple_choice_answer']).lower()
+            self.answer[split]['annotations'][idx]['multiple_choice_answer'] = self.process_single_sentence(self.answer[split]['annotations'][idx]['multiple_choice_answer'])
             for idx1, ans in enumerate(answers['answers']):
-                self.answer['annotations'][idx]['answers'][idx1]['answer'] = str(self.answer['annotations'][idx]['answers'][idx1]['answer']).lower()
-                self.answer['annotations'][idx]['answers'][idx1]['answer'] = self.process_single_sentence(self.answer['annotations'][idx]['answers'][idx1]['answer'])
+                self.answer[split]['annotations'][idx]['answers'][idx1]['answer'] = str(self.answer[split]['annotations'][idx]['answers'][idx1]['answer']).lower()
+                self.answer[split]['annotations'][idx]['answers'][idx1]['answer'] = self.process_single_sentence(self.answer[split]['annotations'][idx]['answers'][idx1]['answer'])
     
 
     def process_single_sentence(self, sentence):
@@ -116,7 +118,14 @@ class VQAEval:
 
 
     def run(self):
-        self.process_digit()
+        split = {'train', 'test', 'val'}
+        for i in split:
+            self.process_digit(split = i)
         self.get_word_set()
         self.get_freq()
-        self.get_vec()
+        for i in split:
+            self.get_vec(split = i)
+    
+    def get_acc(self, split = 'train'):
+        return self.acc[split]
+    
