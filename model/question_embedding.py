@@ -1,13 +1,14 @@
 import mindspore
+import numpy as np
+import os.path as osp
 import mindspore.nn as nn
 # import torch.utils.model_zoo as model_zoo
 from mindspore.ops import operations as ops
 
-model_url = ""
 
 class embedding(nn.Cell):
     """embedding layer.\\ 
-    The feature extactor takes a (N, L, V) tensor as input, \\
+    The feature extactor takes a (N, L) tensor as input, \\
     with each dim corresponding to batch_size, questio nlength, vocabulary size
     and output a (N, L, D) tensor.
     """
@@ -15,12 +16,10 @@ class embedding(nn.Cell):
         super().__init__()
         self._vocab_size = cfg["embedding"]["vocab_size"]
         self._embed_size = cfg["embedding"]["embed_size"]
-        self.embedding = nn.Embedding(self.vocab_size, self.embed_size)
-    #     self.load_pretrained_weight()
 
-    # def load_pretrained_weight(self):
-        # pretrain_dict = model_zoo.load_url(model_url)
-        # self.embedding.load_state_dict(pretrain_dict, strict=False)
+        self._embdpath = osp.join(cfg["preprocess_path"], "weight.txt")
+        self._embedding_table = np.loadtxt(self._embdpath).astype(np.float32)
+        self.embedding = nn.Embedding(self._vocab_size, self._embed_size, self._embedding_table)
 
     def construct(self, inputs):
         embeds = self.embedding(inputs)

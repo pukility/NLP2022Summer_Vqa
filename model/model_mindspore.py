@@ -5,7 +5,6 @@ from mindspore.ops import operations as ops
 
 from .non_linear import non_linear
 from .image_attention import image_attention
-from .image_feature import image_feature
 from .question_embedding import question_embedding
 
 
@@ -13,9 +12,7 @@ class vqa_model(nn.Cell):
     def __init__(self, cfg):
         super().__init__()
         self.q_embd = question_embedding(cfg)
-        self.i_feat = image_feature(cfg)
         self.i_attn = image_attention(cfg)
-
 
         self.i_w1 = non_linear(cfg["i_w1"])
         self.i_w2 = non_linear(cfg["i_w2"])
@@ -27,10 +24,9 @@ class vqa_model(nn.Cell):
 
     def construct(self, que, img):
         q_embd = self.q_embd(que)
-        i_feat = self.i_feat(img)
         # i_attn: (N, K, 1)
-        i_attn = self.i_attn(i_feat, q_embd)
-        i_feat = i_feat * i_attn
+        i_attn = self.i_attn(img, q_embd)
+        i_feat = img * i_attn
         # i_feat: (N, D)
         i_feat = ops.ReduceSum()(i_feat, 1)
 
