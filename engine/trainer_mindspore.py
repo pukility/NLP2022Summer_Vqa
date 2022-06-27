@@ -15,9 +15,8 @@ class LossFunc(nn.LossBase):
 
 def AccFunc(out, ans):
     labels = ops.Argmax(1)(ans)
-    sparse_labels = ops.ZerosLike()(ans)
-    for i in range(ops.Shape()(ans)[0]):
-        sparse_labels[i][labels[i]] = 1
+    one_hot = nn.OneHot(depth = 457)
+    sparse_labels = one_hot(labels)
     sparse_outs = np.where(out > 1, 1, 0)
     corrects = ops.ReduceSum()(sparse_labels * sparse_outs, 1)
     return ops.ReduceMean()(corrects, 0)
@@ -99,7 +98,7 @@ class Trainer:
                 sum_loss += loss
                 sum_acc += acc
                 num += 1
-            print('Epoch{:03d}:'.format(i))
+            print('Epoch{:3d}:'.format(i))
             print('Loss: {:.4f}, Accuracy: {:.4f}'.format(sum_loss, sum_acc / num))
 
     def test(self):

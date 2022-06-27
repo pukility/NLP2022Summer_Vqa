@@ -49,6 +49,6 @@ def build_dataset(cfg, parser=None, split = "train"):
 #     dataset = MyDataset(cfg, parser, split)
     dataset = datalist
     dataset = ds.GeneratorDataset(dataset, column_names=["img", "que", "ans"], column_types=[mindspore.float32, mindspore.int32, mindspore.float32])
-    dataset = dataset.batch(batch_size=batch_size)
+    dataset = dataset.batch(batch_size=batch_size, drop_remainder=True)
     return dataset
 
