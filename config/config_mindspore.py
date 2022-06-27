@@ -1,11 +1,13 @@
+import os.path as osp
+
 cfg = {}
 
 # in ./utils/tokenizer.py
-cfg["que_path"] = "NLP2022Summer_Vqa/data/vqa/questions"
-cfg["ans_path"] = "NLP2022Summer_Vqa/data/vqa/annotations"
-cfg["img_path"] = "NLP2022Summer_Vqa/data/vqa/image_features.pkl"
-cfg["glove_path"] = "NLP2022Summer_Vqa/data/glove.6B"
-cfg["embd_path"] = "NLP2022Summer_Vqa/data/preprocess"
+cfg["que_path"] = "vqa/questions"
+cfg["ans_path"] = "vqa/annotations"
+cfg["img_path"] = "vqa/image_features.pkl"
+cfg["glove_path"] = "vqa/glove.6B"
+cfg["embd_path"] = "vqa/preprocess"
 cfg["maxlen"] = 14
 
 # in ./model/question_embedding
@@ -46,8 +48,8 @@ cfg["q_w3"]["output_dim"] = 457
 
 cfg["gru"] = {}
 cfg["gru"]["input_size"] = 300
-cfg["gru"]["hidden_sizes"] = 2
+cfg["gru"]["hidden_size"] = 512
 
-cfg["batch_size"] = 5
+cfg["batch_size"] = 10
 cfg["epoch_num"] = 5
 cfg["learning_rate"] = 0.002
