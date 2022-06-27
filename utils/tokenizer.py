@@ -1,6 +1,5 @@
 import os
 import json
-import gensim
 import pickle
 import numpy as np
 from tqdm import tqdm
