@@ -1,1 +1,1 @@
-from trainer_mindspore import Trainer
+from .trainer_mindspore import Trainer

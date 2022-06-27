@@ -14,7 +14,7 @@ class Trainer:
 
     def train(self):
         self.model = Model(self.model, loss_fn=self.loss_func, optimizer=self.optimizer, metrics={'accuracy'})
-        self.model.train(self.config['epoch_num'], self.train_dloader, callbacks=[ValAccMonitor(self.model, self.val_dloader, num_epochs=10)])
+        self.model.train(self.config['epoch_num'], self.train_dloader, callbacks=[ValAccMonitor(self.model, self.val_dloader, num_epochs=1)])
 
     def test(self):
         acc = self.model.eval(self.test_dloader)

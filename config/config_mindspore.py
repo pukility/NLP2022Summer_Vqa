@@ -1,15 +1,16 @@
 cfg = {}
 
 # in ./utils/tokenizer.py
-cfg["que_path"] = "./data/vqa/questions"
-cfg["img_path"] = "./data/vqa/image_features.pkl"
-cfg["glove_path"] = "./data/vqa/glove.6B"
-cfg["embd_path"] = "./data/vqa/preprocess"
-cfg["max_len"] = 14
+cfg["que_path"] = "NLP2022Summer_Vqa/data/vqa/questions"
+cfg["ans_path"] = "NLP2022Summer_Vqa/data/vqa/annotations"
+cfg["img_path"] = "NLP2022Summer_Vqa/data/vqa/image_features.pkl"
+cfg["glove_path"] = "NLP2022Summer_Vqa/data/glove.6B"
+cfg["embd_path"] = "NLP2022Summer_Vqa/data/preprocess"
+cfg["maxlen"] = 14
 
 # in ./model/question_embedding
 cfg["embedding"] = {}
-cfg["embedding"]["vocab_size"] = 9447
+cfg["embedding"]["vocab_size"] = 12888
 #cfg["embedding"]["vocab_size"]["train"] = 9447
 #cfg["embedding"]["vocab_size"]["val"] = 6835
 #cfg["embedding"]["vocab_size"]["tests"] = 6818
@@ -47,6 +48,7 @@ cfg["gru"] = {}
 cfg["gru"]["input_size"] = 14 * 300
 cfg["gru"]["hidden_sizes"] = 512
 
-cfg["epoch_num"] = 10
-cfg["learning_rate"] = 0.1
+cfg["batch_size"] = 512
+cfg["epoch_num"] = 5
+cfg["learning_rate"] = 0.002
 cfg["momentum"] = 0.9

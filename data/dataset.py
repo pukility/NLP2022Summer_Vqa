@@ -1,6 +1,4 @@
-import cv2
-import os
-import numpy as np
+import mindspore
 import mindspore.dataset as ds
 from ..utils.tokenizer import Tokenizer
 
@@ -17,7 +15,7 @@ class MyDataset:
             parser = Tokenizer(cfg)
             parser.parse()
         
-        img, que, ans, _ = parser.get_datas(split)
+        img, que, ans = parser.get_datas(split)
         qids = que.keys()
         for qid in qids:
             self._img.append(img[qid])
@@ -35,7 +33,7 @@ class MyDataset:
 def build_dataset(cfg, parser=None, split = "train"):
     batch_size = cfg["batch_size"] 
     dataset = MyDataset(cfg, parser, split)
-    dataset = ds.GeneratorDataset(dataset, column_names=["img", "que", "ans"])
+    dataset = ds.GeneratorDataset(dataset, column_names=["img", "que", "ans"], column_types=[mindspore.float32, mindspore.int32, mindspore.float32])
     dataset = dataset.batch(batch_size=batch_size)
     return dataset
 

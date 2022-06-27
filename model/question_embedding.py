@@ -2,9 +2,9 @@ import mindspore
 import numpy as np
 import os.path as osp
 import mindspore.nn as nn
-# import torch.utils.model_zoo as model_zoo
-from mindspore.ops import operations as ops
 
+from mindspore.ops import operations as ops
+from mindspore import Tensor, Parameter
 
 class embedding(nn.Cell):
     """embedding layer.\\ 
@@ -18,8 +18,8 @@ class embedding(nn.Cell):
         self._embed_size = cfg["embedding"]["embed_size"]
 
         self._embdpath = osp.join(cfg["embd_path"], "weight.txt")
-        self._embedding_table = np.loadtxt(self._embdpath).astype(np.float32)
-        self.embedding = nn.Embedding(self._vocab_size, self._embed_size, self._embedding_table)
+        self._embedding_table = Tensor(np.loadtxt(self._embdpath).astype(np.float32))
+        self.embedding = nn.Embedding(self._vocab_size, self._embed_size, embedding_table = self._embedding_table)
 
     def construct(self, inputs):
         embeds = self.embedding(inputs)
@@ -30,13 +30,19 @@ class gru(nn.Cell):
         super().__init__()
         self._input_size = cfg["gru"]["input_size"]
         self._hidden_size = cfg["gru"]["hidden_sizes"]
-        ## 这里num_layer是怎么说
-        self.gru = nn.GRU(self._input_size, self._hidden_size, num_layers=1)
         
+        stdv = 1 / np.sqrt(self._hidden_size)
+        shape = (1, cfg["batch_size"], self._hidden_size)
+        self.gru = nn.LSTM(self._input_size, self._hidden_size, batch_first = True)
+        self.h0 = Parameter(Tensor(np.random.uniform(-stdv, stdv, shape).astype(np.float16)))
+        self.c0 = Parameter(Tensor(np.random.uniform(-stdv, stdv, shape).astype(np.float16)))
+        
+        self.trans = ops.Transpose()
+
     def construct(self, inputs):
         ## 这里h0初始化怎么选？
-        h0 = ops.ExpandDims()(ops.ZerosLike()(inputs), 0)
-        output, hn = self.gru(inputs, h0)
+        output, _ = self.gru(inputs, (self.h0, self.c0))
+        output = self.trans(output, (1, 0, 2))
         return output
 
 class question_embedding(nn.Cell):

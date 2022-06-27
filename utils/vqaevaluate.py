@@ -1,7 +1,11 @@
 import numpy as np
 import json
+import os.path as osp
+
+from mindspore import Tensor
+from mindspore import dtype as mstype
 class VQAEval:
-    def __init__(self, n = 8):
+    def __init__(self, ans_path, n = 8):
         self.n = n
         self.contractions = {"aint": "ain't", "arent": "aren't", "cant": "can't", "couldve": "could've", "couldnt": "couldn't", \
                             "couldn'tve": "couldn't've", "couldnt've": "couldn't've", "didnt": "didn't", "doesnt": "doesn't", "dont": "don't", "hadnt": "hadn't", \
@@ -38,9 +42,9 @@ class VQAEval:
             'nine' : 9
         }
         self.articles = {'a', 'an', 'the'}
-        self.answer = {'train' : json.load(open('./annotations/train.json', 'r', encoding='utf-8')), 
-                       'test' : json.load(open('./annotations/test.json', 'r', encoding='utf-8')), 
-                       'val' : json.load(open('./annotations/val.json', 'r', encoding='utf-8'))}
+        self.answer = {'train' : json.load(open(osp.join(ans_path, "train.json"), 'r', encoding='utf-8')), 
+                       'test' : json.load(open(osp.join(ans_path, "test.json"), 'r', encoding='utf-8')), 
+                       'val' : json.load(open(osp.join(ans_path, "val.json"), 'r', encoding='utf-8'))}
         self.wordset = []
         self.freq = {}
         self.acc = {'train' : {}, 'test' : {}, 'val' : {}}
@@ -89,6 +93,7 @@ class VQAEval:
         for key, val in self.acc[split].items():
             self.acc[split][key] = self.acc[split][key] / (np.ones_like(self.acc[split][key]) * 3)
             self.acc[split][key][self.acc[split][key] < 1] = 1
+            self.acc[split][key] = Tensor(self.acc[split][key],  mstype.float32)
 
 
     def process_digit(self, split = 'train'):

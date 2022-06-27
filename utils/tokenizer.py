@@ -2,9 +2,12 @@ import os
 import json
 import pickle
 import numpy as np
+
 from tqdm import tqdm
 from itertools import chain
 from os import path as osp
+from mindspore import Tensor
+from mindspore import dtype as mstype
 
 from .vqaevaluate import VQAEval
 
@@ -19,13 +22,16 @@ class Tokenizer:
 
     def __init__(self, cfg):
         que_path = cfg["que_path"]
+        ans_path = cfg["ans_path"]
         img_path = cfg["img_path"]
         glove_path = cfg["glove_path"]
         embd_path = cfg["embd_path"]
         embed_size = cfg["embedding"]["embed_size"]
 
         self.__que_path = que_path
+        self.__ans_path = ans_path
         self.__img_path = img_path
+        self.__img_file = pickle.load(open(self.__img_path, "rb"))
         self.__embd_path = embd_path
         self.__glove_dim = embed_size
         self.__glove_path = os.path.join(glove_path, 'glove.6B.' + str(self.__glove_dim) + 'd.txt')
@@ -40,7 +46,7 @@ class Tokenizer:
         self.__img_feat = {}
 
         self.__word2idx = {}
-        self.__weight_np = {}
+        self.__weight_np = None
 
     def parse(self):
         """
@@ -50,7 +56,7 @@ class Tokenizer:
         self.__parse_glove()
 
 
-        self.__ans_eval = VQAEval(n=8)
+        self.__ans_eval = VQAEval(self.__ans_path, n=8)
         self.__ans_eval.run()
         for split in splits:
             print("=======================Start parse {}=======================".format(split))
@@ -58,9 +64,18 @@ class Tokenizer:
             self.__parse_que_datas(split)
             self.__parse_ans_datas(split)
             #分别读取出文本与label，其中文本处理包括：提取词汇表，文本转词汇id，文本id向量统一长度
-            self.__parse_que_and_ans(split)
+            self.__updata_que_to_tokenized(split)
             #生成对应的glove矩阵
-            self.__gen_weight_np(split)
+            
+        self.__construct_dict()
+        
+        for split in splits:
+            #词汇转化为对应id
+            self.__encode_features(split)
+            #将所有id组成的句子force到同样长度
+            self.__padding_features(split, maxlen = self.__cfg["maxlen"])
+        
+        self.__gen_weight_np()
         
         if self.__weight_np is not None:
             np.savetxt(os.path.join(self.__embd_path, 'weight.txt'), self.__weight_np)
@@ -79,14 +94,13 @@ class Tokenizer:
         path = osp.join(self.__que_path, split+".json")
         que_file = json.load(open(path, "r"))
 
-        img_file = pickle.load(open(self.__img_path, "rb"))
         que_text = {}
         img_feat = {}
         for q in que_file["questions"]:
             qid = q["question_id"]
             que_text[qid] = q["question"]
             iid = qid//1000
-            img_feat[str(qid)] = img_file[iid]
+            img_feat[qid] = Tensor(self.__img_file[str(iid)], mstype.float32)
 
         self.__que_text[split] = que_text
         self.__img_feat[split] = img_feat
@@ -99,15 +113,13 @@ class Tokenizer:
         ans_token = self.__ans_eval.get_acc(split)
         self.__ans_token[split] = ans_token
 
-    def __parse_que_and_ans(self, split):
+    def __que_tokenize(self, split):
         """
         解析features与labels
         """
 
         #切分原始语句
         self.__updata_que_to_tokenized(split)
-        #构建词汇表
-        self.__parse_vocab(split)
         #词汇转化为对应id
         self.__encode_features(split)
         #将所有id组成的句子force到同样长度
@@ -123,23 +135,27 @@ class Tokenizer:
             self.__que_text[split][qid] = [word.lower() for word in sentence.split(" ")]
 
 
-    def __parse_vocab(self, split):
+    def __construct_dict(self):
         """
         构建词汇表
         """
-        vocab = set(chain(*self.__que_text[split].values()))
+        vocab = []
+        for s in splits:
+            vocab += list(chain(*self.__que_text[s].values()))
+        
+        vocab = set(vocab)
 
         # word_to_idx: {'hello': 1, 'world':111, ... '<unk>': 0}
         word_to_idx = {word: i + 1 for i, word in enumerate(vocab)}
         word_to_idx['<unk>'] = 0
-        self.__word2idx[split] = word_to_idx
+        self.__word2idx = word_to_idx
 
 
     def __encode_features(self, split):
         """ 
         词汇转化为对应id 
         """
-        word_to_idx = self.__word2idx['train']
+        word_to_idx = self.__word2idx
         encoded_que = {}
         for qid in self.__que_text[split].keys():
             question = self.__que_text[split][qid]
@@ -160,21 +176,21 @@ class Tokenizer:
                 padded_que = que_token
                 while len(padded_que) < maxlen:
                     padded_que.append(pad)
-            self.__que_token[split][qid] = padded_que
+            self.__que_token[split][qid] = Tensor(padded_que, mstype.int32)
 
 
-    def __gen_weight_np(self, split):
+    def __gen_weight_np(self):
         """
         使用gensim获取权重
         """
-        weight_np = np.zeros((len(self.__word2idx[split]), self.__glove_dim), dtype=np.float32)
-        for word, idx in self.__word2idx[split].items():
+        weight_np = np.zeros((len(self.__word2idx), self.__glove_dim), dtype=np.float32)
+        for word, idx in self.__word2idx.items():
             if word not in self.__glove.keys():
                 continue
             word_vector = np.array(self.__glove[word])
             weight_np[idx, :] = word_vector
 
-        self.__weight_np[split] = weight_np
+        self.__weight_np = weight_np
 
 
     def get_datas(self, split):
