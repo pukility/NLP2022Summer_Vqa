@@ -32,7 +32,7 @@ cfg["i_w2"]["input_dim"] = 512
 cfg["i_w2"]["output_dim"] = 2048
 cfg["i_w3"] = {}
 cfg["i_w3"]["input_dim"] = 2048
-cfg["i_w3"]["output_dim"] = 3129
+cfg["i_w3"]["output_dim"] = 457
 
 cfg["q_w1"] = {}
 cfg["q_w1"]["input_dim"] = 512
@@ -42,10 +42,10 @@ cfg["q_w2"]["input_dim"] = 512
 cfg["q_w2"]["output_dim"] = 300
 cfg["q_w3"] = {}
 cfg["q_w3"]["input_dim"] = 300
-cfg["q_w3"]["output_dim"] = 3129
+cfg["q_w3"]["output_dim"] = 457
 
 cfg["gru"] = {}
-cfg["gru"]["input_size"] = 14 * 300
+cfg["gru"]["input_size"] = 300
 cfg["gru"]["hidden_sizes"] = 2
 
 cfg["batch_size"] = 5
