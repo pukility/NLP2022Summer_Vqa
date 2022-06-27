@@ -45,54 +45,41 @@ class VQAEval:
         self.answer = {'train' : json.load(open(osp.join(ans_path, "train.json"), 'r', encoding='utf-8')), 
                        'test' : json.load(open(osp.join(ans_path, "test.json"), 'r', encoding='utf-8')), 
                        'val' : json.load(open(osp.join(ans_path, "val.json"), 'r', encoding='utf-8'))}
-        self.wordset = []
         self.freq = {}
         self.acc = {'train' : {}, 'test' : {}, 'val' : {}}
-
-
-    def get_word_set(self):
-        """
-        根据json当中的multiple_choice_answer字段得到字典
-        """
-        for ans in self.answer['train']['annotations']:
-            self.wordset.append(self.contractions.get(ans['multiple_choice_answer'], ans['multiple_choice_answer']))
-        self.wordset = set(self.wordset)
 
 
     def get_freq(self):
         """
         对于freq小于n的answer，采取删除的措施
         此函数运行结束之后self.freq中保存了满足条件的answer，key为answer，value为answer的index
+        对于其他不在字典中的回答，对应的ans_idx都为0，用self.freq.get(word, 0)即可
         """
         for answers in self.answer['train']['annotations']:
-            self.freq[answers['multiple_choice_answer']] = self.freq.get(answers['multiple_choice_answer'], 0) + 1
+            stemmed_word = self.contractions.get(answers['multiple_choice_answer'], answers['multiple_choice_answer'])
+            self.freq[stemmed_word] = self.freq.get(stemmed_word, 0) + 1
         tmp = []
         for key, val in self.freq.items():
             if val < self.n:
                 tmp.append(key)
         for i in tmp:
             self.freq.pop(i)
-        idx = 0
-        for key, val in self.freq.items():
-            self.freq[key] = idx
-            idx += 1
-
+        
+        for idx, key in enumerate(list(self.freq.keys())):
+            self.freq[key] = idx + 1
+        self.freq['<unk>'] = 0
 
     def get_vec(self, split = 'train'):
         """
         根据公式计算出最终的Acc值
         """
-        for i in range(len(self.answer[split]['annotations'])):
-            self.acc[split][self.answer[split]['annotations'][i]['question_id']] = np.zeros(len(self.wordset))
-            answers = self.answer[split]['annotations'][i]
-            for ans in answers['answers']:
-                if ans['answer'] not in self.freq.keys():
-                    continue
-                else:
-                    self.acc[split][self.answer[split]['annotations'][i]['question_id']][self.freq[ans['answer']]] += 1
-        for key, val in self.acc[split].items():
-            self.acc[split][key] = self.acc[split][key] / (np.ones_like(self.acc[split][key]) * 3)
-            self.acc[split][key][self.acc[split][key] < 1] = 1
+        for annotation in self.answer[split]['annotations']:
+            self.acc[split][annotation['question_id']] = np.zeros(len(list(self.freq.keys())))
+            for ans in annotation['answers']:
+                stemmed_word = self.contractions.get(ans["answer"], ans["answer"])
+                idx = self.freq.get(stemmed_word, 0)
+                self.acc[split][annotation['question_id']][idx] += 0.3
+        for key in self.acc[split].keys():
             self.acc[split][key] = Tensor(self.acc[split][key],  mstype.float32)
 
 
@@ -126,7 +113,6 @@ class VQAEval:
         split = {'train', 'test', 'val'}
         for i in split:
             self.process_digit(split = i)
-        self.get_word_set()
         self.get_freq()
         for i in split:
             self.get_vec(split = i)

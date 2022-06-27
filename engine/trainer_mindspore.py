@@ -1,33 +1,27 @@
-import tqdm
-import math
+from tqdm import tqdm
 import mindspore.nn as nn
-from mindspore.nn.loss.loss import _Loss
-from mindspore.ops import operations as ops
+import mindspore.numpy as np
+import mindspore.ops as ops
 from mindspore.common.parameter import ParameterTuple
 
-class LossFunc(_Loss):
+class LossFunc(nn.LossBase):
     def __init__(self, reduction='mean'):
         super(LossFunc, self).__init__(reduction)
-        self.reduce_sum = ops.ReduceSum()
-        self.log_softmax = ops.LogSoftmax(axis=0)
+        self.ce = nn.SoftmaxCrossEntropyWithLogits(sparse=False)
 
     def construct(self, logits, label):
-        nll = -self.log_softmax(logits)
-        loss = self.reduce_sum(nll * label / 10, axis=1).mean()
+        loss = self.ce(logits, label)
+        print("The loss of one batch is calculated")
         return self.get_loss(loss)
 
 def AccFunc(out, ans):
-    arg_max = ops.Argmax(1)
-    gather = ops.GatherD()
-    minimum = ops.Minimum()
-    unsqueeze = ops.ExpandDims()
-    squeeze = ops.Squeeze(1)
-
-    predicted_index = arg_max(out)
-    predicted_index = unsqueeze(predicted_index, 1)
-    agreeing = gather(ans, 1, predicted_index)
-    agreeing = squeeze(agreeing)
-    return minimum(agreeing * 0.3, 1.0)
+    labels = ops.Argmax(1)(ans)
+    sparse_labels = ops.ZerosLike()(ans)
+    for i in range(ops.Shape()(ans)[0]):
+        sparse_labels[i][labels[i]] = 1
+    sparse_outs = np.where(out > 1, 1, 0)
+    corrects = ops.ReduceSum()(sparse_labels * sparse_outs, 1)
+    return ops.ReduceMean()(corrects, 0)
 
 class TrainOneStepCell(nn.Cell):
     def __init__(self, loss_net, optimizer):
@@ -39,8 +33,10 @@ class TrainOneStepCell(nn.Cell):
         self.grad = ops.GradOperation(get_by_list=True)
 
     def construct(self, img, que, ans):
+        print("Begin training one step......")
         weights = self.weights
         loss = self.loss_net(img, que, ans)
+        print("Begin backwarding......")
         grads = self.grad(self.loss_net, weights)(img, que, ans)
         return ops.depend(loss, self.optimizer(grads))
 
@@ -51,6 +47,7 @@ class TrainLossCell(nn.Cell):
         self.net = net
 
     def construct(self, img, que, ans):
+        print("Begin computing loss......")
         out = self.net(img, que)
         loss = self.loss_fn(out, ans)
         return loss
@@ -59,12 +56,13 @@ class TrainCell(nn.Cell):
     def __init__(self, net, config):
         super(TrainCell, self).__init__(auto_prefix=False)
         loss_net = TrainLossCell(net)
-        optimizer = nn.Adam(self.model.trainable_params(), learning_rate=config['learning_rate'])
+        optimizer = nn.Adam(loss_net.trainable_params(), learning_rate=config['learning_rate'])
         self.loss_train_net = TrainOneStepCell(loss_net, optimizer)
 
     def construct(self, img, que, ans):
+        print("Begin forwarding......")
         loss = self.loss_train_net(img, que, ans)
-        return loss
+        return loss.asnumpy()
 
 class EvalCell(nn.Cell):
     def __init__(self, net):
@@ -76,7 +74,7 @@ class EvalCell(nn.Cell):
         out = self.net(img, que)
         loss = self._loss_fn(out, ans)
         acc = AccFunc(out, ans)
-        return loss, acc
+        return loss.asnumpy(), acc.asnumpy()
 
 class Trainer:
     def __init__(self, model, config, train_dloader, val_dloader, test_dloader):
@@ -94,13 +92,16 @@ class Trainer:
         eval_cell = EvalCell(self.model)
         eval_cell.set_train(False)
         for i in range(self.config['epoch_num']):
-            for img, que, ans in tqdm(self.train_dloader, desc='Train epoch{:03d}'.format(i), ncols=0, total=math.ceil(len(self.train_dloader.source) / self.config['batch_size'])):
+            iterator = self.train_dloader.create_tuple_iterator()
+            for img, que, ans in tqdm(iterator, desc='Train epoch{:3d}'.format(i), ncols=0, total=self.train_dloader.get_dataset_size()):
+                print("Loading batch done!")
                 train_cell(img, que, ans)
             sum_loss = 0
             sum_acc = 0
             num = 0
-            for img, que, ans in tqdm(self.val_dloader, desc='Validate epoch{:03d}'.format(i), ncols=0, total=math.ceil(len(self.val_dloader.source) / self.config['batch_size'])):
-                loss, acc = EvalCell(img, que, ans)
+            iterator = self.val_dloader.create_tuple_iterator()
+            for img, que, ans in tqdm(iterator, desc='Validate epoch{:3d}'.format(i), ncols=0, total=self.val_dloader.get_dataset_size()):
+                loss, acc = eval_cell(img, que, ans)
                 sum_loss += loss
                 sum_acc += acc
                 num += 1
@@ -111,8 +112,9 @@ class Trainer:
         sum_loss = 0
         sum_acc = 0
         num = 0
-        for img, que, ans in tqdm(self.test_dloader, desc='Test', ncols=0, total=math.ceil(len(self.test_dloader.source) / self.config['batch_size'])):
-            loss, acc = EvalCell(img, que, ans)
+        iterator = self.test_dloader.create_tuple_iterator()
+        for img, que, ans in tqdm(iterator, desc='Test', ncols=0, total=math.ceil(len(self.test_dloader.source) / self.config['batch_size'])):
+            loss, acc = eval_cell(img, que, ans)
             sum_loss += loss
             sum_acc += acc
             num += 1

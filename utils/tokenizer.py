@@ -52,8 +52,12 @@ class Tokenizer:
         """
         解析vqa data
         """
-        print("=======================Start parse glove=======================")
-        self.__parse_glove()
+        if osp.exists(osp.join(self.__embd_path, "weight.txt")):
+            print("weight data already exists")
+        else:
+            print("=======================Start parse glove=======================")
+            self.__parse_glove()
+        
 
 
         self.__ans_eval = VQAEval(self.__ans_path, n=8)
@@ -75,10 +79,10 @@ class Tokenizer:
             #将所有id组成的句子force到同样长度
             self.__padding_features(split, maxlen = self.__cfg["maxlen"])
         
-        self.__gen_weight_np()
-        
-        if self.__weight_np is not None:
-            np.savetxt(os.path.join(self.__embd_path, 'weight.txt'), self.__weight_np)
+        if not osp.exists(osp.join(self.__embd_path, "weight.txt")):
+            self.__gen_weight_np()
+            if self.__weight_np is not None:
+                np.savetxt(os.path.join(self.__embd_path, 'weight.txt'), self.__weight_np)
 
     def __parse_glove(self):
         f_lines = self.__glove_file.readlines()
@@ -113,17 +117,6 @@ class Tokenizer:
         ans_token = self.__ans_eval.get_acc(split)
         self.__ans_token[split] = ans_token
 
-    def __que_tokenize(self, split):
-        """
-        解析features与labels
-        """
-
-        #切分原始语句
-        self.__updata_que_to_tokenized(split)
-        #词汇转化为对应id
-        self.__encode_features(split)
-        #将所有id组成的句子force到同样长度
-        self.__padding_features(split, maxlen = self.__cfg["maxlen"])
 
 
     def __updata_que_to_tokenized(self, split):
