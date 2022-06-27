@@ -51,4 +51,3 @@ cfg["gru"]["hidden_sizes"] = 512
 cfg["batch_size"] = 512
 cfg["epoch_num"] = 5
 cfg["learning_rate"] = 0.002
-cfg["momentum"] = 0.9
