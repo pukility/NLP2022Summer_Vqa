@@ -22,7 +22,7 @@ class embedding(nn.Cell):
         self.embedding = nn.Embedding(self._vocab_size, self._embed_size, embedding_table = self._embedding_table)
 
     def construct(self, inputs):
-        embeds = self.embedding(inputs)
+        embeds = self.embedding(inputs.astype('int32'))
         return embeds
 
 class gru(nn.Cell):
