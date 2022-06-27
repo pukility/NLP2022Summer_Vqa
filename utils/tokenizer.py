@@ -92,10 +92,10 @@ class Tokenizer:
             qid = q["question_id"]
             que_text[qid] = q["question"]
             iid = qid//1000
-            img_feat[qid] = img_file[str(iid)]
+            img_feat[qid] = np.array(img_file[str(iid)]).astype(np.float32)
 
         self.__que_text[split] = que_text
-        self.__img_feat[split] = np.array(img_feat).astype(np.float32)
+        self.__img_feat[split] = img_feat
 
     def __parse_ans_datas(self, split):
         """
