@@ -9,7 +9,7 @@ from mindspore import Tensor, Parameter
 class embedding(nn.Cell):
     """embedding layer.\\ 
     The feature extactor takes a (N, L) tensor as input, \\
-    with each dim corresponding to batch_size, questio nlength, vocabulary size
+    with each dim corresponding to batch_size, question length, vocabulary size
     and output a (N, L, D) tensor.
     """
     def __init__(self, cfg):
@@ -48,7 +48,7 @@ class gru(nn.Cell):
 class question_embedding(nn.Cell):
     """question embedding layer.\\ 
     The feature extactor takes a (N, L, V) tensor as input, \\
-    with each dim corresponding to batch_size, questio nlength, vocabulary size
+    with each dim corresponding to batch_size, question length, vocabulary size
     and output a (N, D) tensor.
     """
     def __init__(self, cfg):

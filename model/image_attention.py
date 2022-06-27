@@ -25,11 +25,11 @@ class image_attention(nn.Cell):
 
     def construct(self, img_feat, que_emb):
         # concatenate the image feature and the questio embedding
-        K = img_feat.shape[0]
+        K = img_feat.shape[1]
         que_emb = ops.ExpandDims()(que_emb, 1)
         que_emb = ops.Tile()(que_emb, (1, K, 1))
         # feat: (N, K, Dq + Di)
-        feat = ops.Concat(1)([img_feat, que_emb])
+        feat = ops.Concat(2)([img_feat, que_emb])
 
         attn = self.w1(feat)
         # attn: (N, K, 1)

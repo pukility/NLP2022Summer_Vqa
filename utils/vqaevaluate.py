@@ -74,7 +74,7 @@ class VQAEval:
         根据公式计算出最终的Acc值
         """
         for annotation in self.answer[split]['annotations']:
-            self.acc[split][annotation['question_id']] = np.zeros(len(list(self.freq.keys())))
+            self.acc[split][annotation['question_id']] = np.zeros( len(list(self.freq.keys())) )
             for ans in annotation['answers']:
                 stemmed_word = self.contractions.get(ans["answer"], ans["answer"])
                 idx = self.freq.get(stemmed_word, 0)
@@ -117,4 +117,3 @@ class VQAEval:
     
     def get_acc(self, split = 'train'):
         return self.acc[split]
-    
