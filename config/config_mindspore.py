@@ -10,7 +10,7 @@ cfg["maxlen"] = 14
 
 # in ./model/question_embedding
 cfg["embedding"] = {}
-cfg["embedding"]["vocab_size"] = 12888
+cfg["embedding"]["vocab_size"] = 9447
 #cfg["embedding"]["vocab_size"]["train"] = 9447
 #cfg["embedding"]["vocab_size"]["val"] = 6835
 #cfg["embedding"]["vocab_size"]["tests"] = 6818
@@ -46,8 +46,8 @@ cfg["q_w3"]["output_dim"] = 3129
 
 cfg["gru"] = {}
 cfg["gru"]["input_size"] = 14 * 300
-cfg["gru"]["hidden_sizes"] = 512
+cfg["gru"]["hidden_sizes"] = 2
 
-cfg["batch_size"] = 512
+cfg["batch_size"] = 5
 cfg["epoch_num"] = 5
 cfg["learning_rate"] = 0.002

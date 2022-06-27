@@ -79,8 +79,6 @@ class VQAEval:
                 stemmed_word = self.contractions.get(ans["answer"], ans["answer"])
                 idx = self.freq.get(stemmed_word, 0)
                 self.acc[split][annotation['question_id']][idx] += 0.3
-        for key in self.acc[split].keys():
-            self.acc[split][key] = Tensor(self.acc[split][key],  mstype.float32)
 
 
     def process_digit(self, split = 'train'):
