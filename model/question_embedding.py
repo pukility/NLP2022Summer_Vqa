@@ -29,20 +29,21 @@ class gru(nn.Cell):
     def __init__(self, cfg):
         super().__init__()
         self._input_size = cfg["gru"]["input_size"]
-        self._hidden_size = cfg["gru"]["hidden_sizes"]
+        self._hidden_size = cfg["gru"]["hidden_size"]
         
         stdv = 1 / np.sqrt(self._hidden_size)
         shape = (1, cfg["batch_size"], self._hidden_size)
         self.gru = nn.LSTM(self._input_size, self._hidden_size, batch_first = True)
-        self.h0 = Parameter(Tensor(np.random.uniform(-stdv, stdv, shape).astype(np.float16)))
-        self.c0 = Parameter(Tensor(np.random.uniform(-stdv, stdv, shape).astype(np.float16)))
+        self.h0 = Parameter(Tensor(np.random.uniform(-stdv, stdv, shape).astype(np.float32)))
+        self.c0 = Parameter(Tensor(np.random.uniform(-stdv, stdv, shape).astype(np.float32)))
         
         self.trans = ops.Transpose()
 
     def construct(self, inputs):
         ## 这里h0初始化怎么选？
+
         output, _ = self.gru(inputs, (self.h0, self.c0))
-        output = self.trans(output, (1, 0, 2))[:, -1, :]
+        output = output[:, -1, :]
         return output
 
 class question_embedding(nn.Cell):
