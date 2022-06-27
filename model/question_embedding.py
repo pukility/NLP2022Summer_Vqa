@@ -41,7 +41,6 @@ class gru(nn.Cell):
 
     def construct(self, inputs):
         ## 这里h0初始化怎么选？
-
         output, _ = self.gru(inputs, (self.h0, self.c0))
         output = output[:, -1, :]
         return output

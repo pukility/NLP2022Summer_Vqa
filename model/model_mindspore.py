@@ -22,7 +22,7 @@ class vqa_model(nn.Cell):
         self.q_w2 = non_linear(cfg["q_w2"])
         self.q_w3 = nn.Dense(in_channels=cfg['q_w3']['input_dim'], out_channels=cfg['q_w3']['output_dim'])
 
-    def construct(self, que, img):
+    def construct(self, img, que):
         q_embd = self.q_embd(que)
         # i_attn: (N, K, 1)
         i_attn = self.i_attn(img, q_embd)
