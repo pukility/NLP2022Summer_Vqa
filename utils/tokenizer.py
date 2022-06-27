@@ -6,8 +6,7 @@ from tqdm import tqdm
 from itertools import chain
 from os import path as osp
 
-from mindspore.mindrecord import FileWriter
-
+from .vqaevaluate import VQAEval
 splits = ['train', "val", 'test']
 
 class Tokenizer:
@@ -135,7 +134,7 @@ class Tokenizer:
         构建词汇表
         """
         vocab = set(chain(*self.__que_text[split].values()))
-        print("The vocab size of {} set is{}".format(split, len(vocab)) )
+        print("The vocab size of {} set is {}".format(split, len(vocab)) )
         # word_to_idx: {'hello': 1, 'world':111, ... '<unk>': 0}
         word_to_idx = {word: i + 1 for i, word in enumerate(vocab)}
         word_to_idx['<unk>'] = 0
