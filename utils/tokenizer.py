@@ -1,12 +1,13 @@
 import os
 import json
+import gensim
 import pickle
 import numpy as np
 from tqdm import tqdm
 from itertools import chain
 from os import path as osp
 
-from .vqaevaluate import VQAEval
+from mindspore.mindrecord import FileWriter
 
 splits = ['train', "val", 'test']
 
@@ -50,11 +51,11 @@ class Tokenizer:
         """
         self.__ans_eval = VQAEval(self.__ans_path, n=8)
         self.__ans_eval.run()
-        if osp.exists(self.__glove_path):
+        if osp.exists(osp.join(self.__embd_path, "weight.txt")):
             print("Embedding weight already exists, skip parsing weight file")
         else:
-            if not osp.exists(self.__cfg["glove_path"]):
-                os.mkdir(self.__cfg["glove_path"])
+            if not osp.exists(self.__embd_path):
+                os.mkdir(self.__embd_path)
             print("=======================Start parse glove=======================")
             self.__parse_glove()
 
@@ -69,7 +70,6 @@ class Tokenizer:
             self.__gen_weight_np(split)
 
         if not osp.exists(osp.join(self.__embd_path, "weight.txt")):
-            self.__gen_weight_np()
             if self.__weight_np is not None:
                 np.savetxt(os.path.join(self.__embd_path, 'weight.txt'), self.__weight_np["train"])  
 
@@ -168,7 +168,7 @@ class Tokenizer:
                 padded_que = que_token
                 while len(padded_que) < maxlen:
                     padded_que.append(pad)
-            self.__que_token[split][qid] = padded_que
+            self.__que_token[split][qid] = np.array(padded_que).astype(np.int32)
 
 
     def __gen_weight_np(self, split="train"):
