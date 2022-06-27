@@ -11,7 +11,6 @@ class LossFunc(nn.LossBase):
 
     def construct(self, logits, label):
         loss = self.ce(logits, label)
-        print("The loss of one batch is calculated")
         return self.get_loss(loss)
 
 def AccFunc(out, ans):
@@ -33,10 +32,8 @@ class TrainOneStepCell(nn.Cell):
         self.grad = ops.GradOperation(get_by_list=True)
 
     def construct(self, img, que, ans):
-        print("Begin training one step......")
         weights = self.weights
         loss = self.loss_net(img, que, ans)
-        print("Begin backwarding......")
         grads = self.grad(self.loss_net, weights)(img, que, ans)
         return ops.depend(loss, self.optimizer(grads))
 
@@ -47,7 +44,6 @@ class TrainLossCell(nn.Cell):
         self.net = net
 
     def construct(self, img, que, ans):
-        print("Begin computing loss......")
         out = self.net(img, que)
         loss = self.loss_fn(out, ans)
         return loss
@@ -60,7 +56,6 @@ class TrainCell(nn.Cell):
         self.loss_train_net = TrainOneStepCell(loss_net, optimizer)
 
     def construct(self, img, que, ans):
-        print("Begin forwarding......")
         loss = self.loss_train_net(img, que, ans)
         return loss.asnumpy()
 
@@ -94,7 +89,6 @@ class Trainer:
         for i in range(self.config['epoch_num']):
             iterator = self.train_dloader.create_tuple_iterator()
             for img, que, ans in tqdm(iterator, desc='Train epoch{:3d}'.format(i), ncols=0, total=self.train_dloader.get_dataset_size()):
-                print("Loading batch done!")
                 train_cell(img, que, ans)
             sum_loss = 0
             sum_acc = 0
@@ -113,7 +107,7 @@ class Trainer:
         sum_acc = 0
         num = 0
         iterator = self.test_dloader.create_tuple_iterator()
-        for img, que, ans in tqdm(iterator, desc='Test', ncols=0, total=math.ceil(len(self.test_dloader.source) / self.config['batch_size'])):
+        for img, que, ans in tqdm(iterator, desc='Test', ncols=0, total=self.test_dloader.get_dataset_size()):
             loss, acc = eval_cell(img, que, ans)
             sum_loss += loss
             sum_acc += acc

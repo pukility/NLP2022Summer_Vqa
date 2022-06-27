@@ -50,6 +50,6 @@ cfg["gru"] = {}
 cfg["gru"]["input_size"] = 300
 cfg["gru"]["hidden_size"] = 512
 
-cfg["batch_size"] = 10
-cfg["epoch_num"] = 5
-cfg["learning_rate"] = 0.002
+cfg["batch_size"] = 512
+cfg["epoch_num"] = 15
+cfg["learning_rate"] = 0.01
