@@ -10,7 +10,7 @@ cfg["maxlen"] = 14
 
 # in ./model/question_embedding
 cfg["embedding"] = {}
-cfg["embedding"]["vocab_size"] = 9447
+cfg["embedding"]["vocab_size"] = 9448
 #cfg["embedding"]["vocab_size"]["train"] = 9447
 #cfg["embedding"]["vocab_size"]["val"] = 6835
 #cfg["embedding"]["vocab_size"]["tests"] = 6818
