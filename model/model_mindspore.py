@@ -25,6 +25,9 @@ class vqa_model(nn.Cell):
         # i_attn: (N, K, 1)
         i_attn = self.i_attn(img, q_embd)
         i_feat = img * i_attn
+        # Stacked
+        i_attn = self.i_attn(i_feat, q_embd)
+        i_feat = img * i_attn
         # i_feat: (N, D)
         i_feat = ops.ReduceSum()(i_feat, 1)
 
