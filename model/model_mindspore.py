@@ -1,6 +1,5 @@
 import mindspore
 import mindspore.nn as nn
-# import torch.utils.model_zoo as model_zoo
 from mindspore.ops import operations as ops
 
 from .non_linear import non_linear

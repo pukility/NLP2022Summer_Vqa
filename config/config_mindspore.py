@@ -1,21 +1,16 @@
-import os.path as osp
-
 cfg = {}
 
 # in ./utils/tokenizer.py
-cfg["que_path"] = "vqa/questions"
-cfg["ans_path"] = "vqa/annotations"
-cfg["img_path"] = "vqa/image_features.pkl"
-cfg["glove_path"] = "vqa/glove.6B"
-cfg["embd_path"] = "vqa/preprocess"
+cfg["que_path"] = "NLP2022Summer_Vqa/data/vqa/questions"
+cfg["ans_path"] = "NLP2022Summer_Vqa/data/vqa/annotations"
+cfg["img_path"] = "NLP2022Summer_Vqa/data/vqa/image_features.pkl"
+cfg["glove_path"] = "NLP2022Summer_Vqa/data/glove.6B"
+cfg["embd_path"] = "NLP2022Summer_Vqa/data/preprocess"
 cfg["maxlen"] = 14
 
 # in ./model/question_embedding
 cfg["embedding"] = {}
 cfg["embedding"]["vocab_size"] = 9448
-#cfg["embedding"]["vocab_size"]["train"] = 9447
-#cfg["embedding"]["vocab_size"]["val"] = 6835
-#cfg["embedding"]["vocab_size"]["tests"] = 6818
 cfg["embedding"]["embed_size"] = 300
 
 cfg["w1"] = {}

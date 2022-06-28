@@ -7,18 +7,17 @@ from mindspore.common.parameter import ParameterTuple
 class LossFunc(nn.LossBase):
     def __init__(self, reduction='mean'):
         super(LossFunc, self).__init__(reduction)
-        self.ce = nn.SoftmaxCrossEntropyWithLogits(sparse=False)
+        self.bce = nn.BCELoss(reduction='mean')
 
     def construct(self, logits, label):
-        loss = self.ce(logits, label)
-        return self.get_loss(loss)
+        loss = self.bce(logits, label)
+        return self.get_loss(loss) * label.shape[1]
 
 def AccFunc(out, ans):
-    labels = ops.Argmax(1)(ans)
+    sparse_outs = ops.Argmax(1)(out)
     one_hot = nn.OneHot(depth = 457)
-    sparse_labels = one_hot(labels)
-    sparse_outs = np.where(out > 1, 1, 0)
-    corrects = ops.ReduceSum()(sparse_labels * sparse_outs, 1)
+    sparse_outs = one_hot(sparse_outs)
+    corrects = ops.ReduceSum()(ans * sparse_outs, 1)
     return ops.ReduceMean()(corrects, 0)
 
 class TrainOneStepCell(nn.Cell):
@@ -56,7 +55,7 @@ class TrainCell(nn.Cell):
 
     def construct(self, img, que, ans):
         loss = self.loss_train_net(img, que, ans)
-        return loss.asnumpy()
+        return loss
 
 class EvalCell(nn.Cell):
     def __init__(self, net):
@@ -68,7 +67,7 @@ class EvalCell(nn.Cell):
         out = self.net(img, que)
         loss = self._loss_fn(out, ans)
         acc = AccFunc(out, ans)
-        return loss.asnumpy(), acc.asnumpy()
+        return loss, acc
 
 class Trainer:
     def __init__(self, model, config, train_dloader, val_dloader, test_dloader):
@@ -86,30 +85,41 @@ class Trainer:
         eval_cell = EvalCell(self.model)
         eval_cell.set_train(False)
         for i in range(self.config['epoch_num']):
-            iterator = self.train_dloader.create_tuple_iterator()
-            for img, que, ans in tqdm(iterator, desc='Train epoch{:3d}'.format(i), ncols=0, total=self.train_dloader.get_dataset_size()):
+            iterator = self.train_dloader.create_dict_iterator()
+            for item in tqdm(iterator, desc='Train epoch{:3d}'.format(i), ncols=0, total=self.train_dloader.get_dataset_size()):
+                img = item['img']
+                que = item['que']
+                ans = item['ans']
                 train_cell(img, que, ans)
             sum_loss = 0
             sum_acc = 0
             num = 0
-            iterator = self.val_dloader.create_tuple_iterator()
-            for img, que, ans in tqdm(iterator, desc='Validate epoch{:3d}'.format(i), ncols=0, total=self.val_dloader.get_dataset_size()):
+            iterator = self.val_dloader.create_dict_iterator()
+            for item in tqdm(iterator, desc='Validate epoch{:3d}'.format(i), ncols=0, total=self.val_dloader.get_dataset_size()):
+                img = item['img']
+                que = item['que']
+                ans = item['ans']
                 loss, acc = eval_cell(img, que, ans)
                 sum_loss += loss
                 sum_acc += acc
                 num += 1
             print('Epoch{:3d}:'.format(i))
-            print('Loss: {:.4f}, Accuracy: {:.4f}'.format(sum_loss, sum_acc / num))
+            print('Loss: {:.4f}, Accuracy: {:.4f}'.format(float(sum_loss.asnumpy()) / num, float(sum_acc.asnumpy()) / num))
 
     def test(self):
+        eval_cell = EvalCell(self.model)
+        eval_cell.set_train(False)
         sum_loss = 0
         sum_acc = 0
         num = 0
-        iterator = self.test_dloader.create_tuple_iterator()
-        for img, que, ans in tqdm(iterator, desc='Test', ncols=0, total=self.test_dloader.get_dataset_size()):
+        iterator = self.test_dloader.create_dict_iterator()
+        for item in tqdm(iterator, desc='Test', ncols=0, total=self.test_dloader.get_dataset_size()):
+            img = item['img']
+            que = item['que']
+            ans = item['ans']
             loss, acc = eval_cell(img, que, ans)
             sum_loss += loss
             sum_acc += acc
             num += 1
         print('Test results:')
-        print('Loss: {:.4f}, Accuracy: {:.4f}'.format(sum_loss, sum_acc / num))
+        print('Loss: {:.4f}, Accuracy: {:.4f}'.format(float(sum_loss.asnumpy()) / num, float(sum_acc.asnumpy()) / num))

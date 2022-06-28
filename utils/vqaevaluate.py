@@ -2,8 +2,6 @@ import numpy as np
 import json
 import os.path as osp
 
-from mindspore import Tensor
-from mindspore import dtype as mstype
 class VQAEval:
     def __init__(self, ans_path, n = 8):
         self.n = n
@@ -78,7 +76,8 @@ class VQAEval:
             for ans in annotation['answers']:
                 stemmed_word = self.contractions.get(ans["answer"], ans["answer"])
                 idx = self.freq.get(stemmed_word, 0)
-                self.acc[split][annotation['question_id']][idx] += 0.3
+                self.acc[split][annotation['question_id']][idx] += 1
+            self.acc[split][annotation['question_id']] = np.where(self.acc[split][annotation['question_id']] >= 3, 1, self.acc[split][annotation['question_id']] / 3)
 
 
     def process_digit(self, split = 'train'):
