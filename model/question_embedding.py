@@ -1,4 +1,3 @@
-import mindspore
 import numpy as np
 import os.path as osp
 import mindspore.nn as nn

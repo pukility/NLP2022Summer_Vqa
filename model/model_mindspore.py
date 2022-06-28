@@ -1,4 +1,3 @@
-import mindspore
 import mindspore.nn as nn
 from mindspore.ops import operations as ops
 

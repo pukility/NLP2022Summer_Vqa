@@ -7,6 +7,7 @@ from itertools import chain
 from os import path as osp
 
 from .vqaevaluate import VQAEval
+
 splits = ['train', "val", 'test']
 
 class Tokenizer:

@@ -1,6 +1,5 @@
 from tqdm import tqdm
 import mindspore.nn as nn
-import mindspore.numpy as np
 import mindspore.ops as ops
 from mindspore.common.parameter import ParameterTuple
 
@@ -78,8 +77,6 @@ class Trainer:
         self.test_dloader = test_dloader
 
     def train(self):
-        # self.model = Model(self.model, loss_fn=self.loss_func, optimizer=self.optimizer, metrics={'accuracy'})
-        # self.model.train(self.config['epoch_num'], self.train_dloader, callbacks=[ValAccMonitor(self.model, self.val_dloader, num_epochs=1)])
         train_cell = TrainCell(self.model, self.config)
         train_cell.set_train(True)
         eval_cell = EvalCell(self.model)

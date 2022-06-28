@@ -3,7 +3,7 @@ import json
 import os.path as osp
 
 class VQAEval:
-    def __init__(self, ans_path, n = 8):
+    def __init__(self, ans_path, n=8):
         self.n = n
         self.contractions = {"aint": "ain't", "arent": "aren't", "cant": "can't", "couldve": "could've", "couldnt": "couldn't", \
                             "couldn'tve": "couldn't've", "couldnt've": "couldn't've", "didnt": "didn't", "doesnt": "doesn't", "dont": "don't", "hadnt": "hadn't", \
@@ -67,7 +67,7 @@ class VQAEval:
             self.freq[key] = idx + 1
         self.freq['<unk>'] = 0
 
-    def get_vec(self, split = 'train'):
+    def get_vec(self, split='train'):
         """
         根据公式计算出最终的Acc值
         """
@@ -80,7 +80,7 @@ class VQAEval:
             self.acc[split][annotation['question_id']] = np.where(self.acc[split][annotation['question_id']] >= 3, 1, self.acc[split][annotation['question_id']] / 3)
 
 
-    def process_digit(self, split = 'train'):
+    def process_digit(self, split='train'):
         """
         对数据进行预处理，包括规范化，统一大小写，去掉和更改部分单词等
         """
@@ -109,10 +109,10 @@ class VQAEval:
     def run(self):
         split = {'train', 'test', 'val'}
         for i in split:
-            self.process_digit(split = i)
+            self.process_digit(split=i)
         self.get_freq()
         for i in split:
-            self.get_vec(split = i)
+            self.get_vec(split=i)
     
-    def get_acc(self, split = 'train'):
+    def get_acc(self, split='train'):
         return self.acc[split]
