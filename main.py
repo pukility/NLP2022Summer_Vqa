@@ -59,13 +59,9 @@ def main(args):
     test_loader = build_dataset(cfg, data_parser, "test")
     trainer = Trainer(model, cfg, train_loader, val_loader, test_loader)
 
-    if args.eval_only:
-        ##trainer.load_model(args.model_dir, epoch=args.load_epoch)
-        trainer.test()
-        return
 
-    if not args.no_train:  
-        trainer.train()
+    trainer.train()
+    trainer.test()
 
     
 
@@ -86,12 +82,14 @@ if __name__ == "__main__":
     parser.add_argument(
         "--glove-dir", type=str, default="", help="path to GloVe data"
     )
+    '''
     parser.add_argument(
         "--embd-dir", type=str, default="", help="output directory of the embedding"
     )
     parser.add_argument(
         "--output-dir", type=str, default="", help="output directory"
     )
+    
     parser.add_argument(
         "--config-file", type=str, default="", help="path to config file"
     )
@@ -113,5 +111,6 @@ if __name__ == "__main__":
         nargs=argparse.REMAINDER,
         help="modify config options using the command-line",
     )
+    '''
     args = parser.parse_args()
     main(args)
